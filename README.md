@@ -1,4 +1,4 @@
-# 🩺 Projeto de Realidade Virtual para Ensino em Pronto Socorro
+# 🩺 Projeto de Realidade Virtual para Ensino de Práticas em Enfermagem
 
 **Disciplina:** PPGTI2003 - Interfaces de Visualização Avançada  
 **Docente:** Prof. Rummenigge Rudson Dantas  
