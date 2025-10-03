@@ -1,0 +1,27 @@
+# Arquivos de Sistema Operacional
+.DS_Store
+Thumbs.db
+
+# Ambiente Virtual
+# O nome do seu ambiente virtual (provavelmente 'venv_avancada' ou 'venv')
+# Isso garante que você nunca envie suas bibliotecas instaladas (que são grandes)
+venv/
+venv_avancada/
+
+# Arquivos de Bytecode Python
+*.pyc
+__pycache__/
+
+# Arquivos de Log e Cache
+*.log
+.coverage
+.pytest_cache/
+
+# Dependências do Instalador (Pip)
+pip-log.txt
+pip-log.log
+
+# Logs e Dados de Processamento (Comum em projetos de Visão Computacional)
+# Se você gerar arquivos de vídeo ou logs de saída, adicione-os aqui.
+output/
+temp/
