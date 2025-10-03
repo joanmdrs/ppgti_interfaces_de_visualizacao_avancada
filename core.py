@@ -4,6 +4,8 @@ import pyautogui
 import math
 import time
 import numpy as np
+# NOVO: Para registrar o tempo e nomear o arquivo de dados
+from datetime import datetime
 
 # ---------------- CONFIG ----------------
 pyautogui.PAUSE = 0
@@ -23,8 +25,8 @@ ZOOM_COOLDOWN = 0.06
 MAP_MARGIN = 100
 SMOOTHING = 0.82
 # -- NOVOS PARÂMETROS PARA O WORKSPACE --
-WORKSPACE_NAV_SENSITIVITY = 50  # Distância em pixels que a mão precisa se mover para navegar
-WORKSPACE_NAV_COOLDOWN = 0.4    # Tempo em segundos para esperar antes da próxima navegação
+WORKSPACE_NAV_SENSITIVITY = 50 # Distância em pixels que a mão precisa se mover para navegar
+WORKSPACE_NAV_COOLDOWN = 0.4 # Tempo em segundos para esperar antes da próxima navegação
 
 # ---------------- ESTADOS ----------------
 mode = "IDLE"
@@ -39,19 +41,26 @@ workspace_mode_active = False
 prev_workspace_hand_x = None
 last_workspace_nav_time = 0
 
+# ---------------- NOVOS ESTADOS PARA COLETA DE DADOS ----------------
+SESSION_START_TIME = datetime.now()
+# Lista que armazenará os dados de cada frame
+data_log = []
+
 
 # ---------------- FUNÇÕES AUX ----------------
 def lm_list_px(hand_landmarks, w, h):
+    """Converte as coordenadas normalizadas (0 a 1) do MediaPipe para coordenadas em pixels."""
     return [(int(pt.x * w), int(pt.y * h)) for pt in hand_landmarks.landmark]
 
-# -- ALTERADO -- Simplificada para usar coordenadas em pixels diretamente
 def count_extended_fingers(lm):
+    """Conta quantos dedos estão estendidos (lógica de cima para baixo no eixo Y, e eixo X para o polegar)."""
     if not lm: return 0
     cnt = 0
-    # Polegar (lógica especial baseada na posição x)
-    if lm[4][0] < lm[3][0]:
+    # Polegar (lógica especial baseada na posição x: se a ponta está à esquerda do marco interno)
+    # Assumindo mão direita, pois a imagem está espelhada
+    if lm[4][0] < lm[3][0]: 
         cnt += 1
-    # Outros 4 dedos (lógica baseada na posição y)
+    # Outros 4 dedos (lógica baseada na posição y: se a ponta está acima do marco interno)
     tips = [8, 12, 16, 20]
     pips = [6, 10, 14, 18]
     for t, p in zip(tips, pips):
@@ -60,6 +69,7 @@ def count_extended_fingers(lm):
     return cnt
 
 def is_pinch_norm(lm, w, h):
+    """Verifica se há o gesto de pinça (pinch) entre o polegar (4) e o indicador (8)"""
     # Recalcula a distância normalizada para ser independente da resolução
     if not lm: return False
     tx_norm, ty_norm = lm[4][0] / w, lm[4][1] / h
@@ -68,6 +78,7 @@ def is_pinch_norm(lm, w, h):
     return dist_norm < PINCH_NORM_THRESHOLD
 
 def two_hands_centroid(lm1, lm2):
+    """Calcula a distância entre o centro da palma (Marco 9) de duas mãos."""
     x1, y1 = lm1[9][0], lm1[9][1]
     x2, y2 = lm2[9][0], lm2[9][1]
     return math.hypot(x1 - x2, y1 - y2)
@@ -93,6 +104,27 @@ try:
                 ext_count = count_extended_fingers(lm_px)
                 hands_data.append({"lm": lm_px, "ext": ext_count, "raw": hand_landmarks})
 
+        # ---------------- NOVO: LÓGICA DE COLETA DE DADOS ----------------
+        if len(hands_data) > 0:
+            # Calcula o tempo relativo ao início da sessão
+            relative_time = (datetime.now() - SESSION_START_TIME).total_seconds()
+            
+            # Coleta as coordenadas (x, y) do ponto de referência (Marco 9: Centro da Palma)
+            # Para simplificar, vamos coletar apenas a primeira mão (índice 0)
+            hand_center_x, hand_center_y = hands_data[0]["lm"][9]
+            
+            # Coleta a contagem de dedos e o modo atual
+            frame_data = {
+                "time_s": relative_time,
+                "mode": detected_mode,
+                "extended_fingers": hands_data[0]["ext"],
+                "hand_x": hand_center_x,
+                "hand_y": hand_center_y,
+                "cam_w": w,
+                "cam_h": h,
+            }
+            data_log.append(frame_data)
+
         # --- DETECÇÃO DE MODO ---
         if len(hands_data) == 2:
             hand1_ext = hands_data[0]["ext"]
@@ -117,11 +149,11 @@ try:
         elif len(hands_data) == 1:
             ext_count = hands_data[0]["ext"]
             if ext_count == 2: # Dedos indicador e médio para cima
-                 detected_mode = "SCROLL"
+                detected_mode = "SCROLL"
             elif ext_count == 1: # Apenas dedo indicador para cima
-                 detected_mode = "MOUSE"
+                detected_mode = "MOUSE"
             else:
-                 detected_mode = "IDLE"
+                detected_mode = "IDLE"
         else:
             detected_mode = "IDLE"
 
@@ -247,6 +279,29 @@ try:
                 break
 
 finally:
+    # ---------------- NOVO: LÓGICA DE EXPORTAÇÃO ----------------
+    if data_log:
+        # 1. Define o nome do arquivo com timestamp
+        timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"sessao_fisioterapia_{timestamp_str}.csv"
+        
+        # 2. Obtém os cabeçalhos (keys)
+        headers = list(data_log[0].keys())
+        
+        # 3. Escreve no arquivo
+        try:
+            with open(filename, 'w') as f:
+                # Escreve o cabeçalho
+                f.write(','.join(headers) + '\n')
+                # Escreve os dados
+                for row in data_log:
+                    values = [str(row[h]) for h in headers]
+                    f.write(','.join(values) + '\n')
+            print(f"\n[SUCESSO] Dados da sessão salvos em: {filename}")
+        except Exception as e:
+            print(f"\n[ERRO] Falha ao salvar o arquivo CSV: {e}")
+    # ---------------- FIM DA LÓGICA DE EXPORTAÇÃO ----------------
+
     if pinch_pressed: pyautogui.mouseUp()
     cap.release()
     cv2.destroyAllWindows()

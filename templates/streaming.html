@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Sessão de Fisioterapia - {{ patient }}</title>
+    <style>
+        body { text-align: center; font-family: Arial, sans-serif; background-color: #f4f7f9; padding: 20px; }
+        .header { margin-bottom: 20px; color: #007bff; }
+        .video-container { border: 4px solid #007bff; display: inline-block; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); background: #000; }
+        #video-feed { 
+            display: block; 
+            width: 800px; /* Ajuste o tamanho da visualização no navegador */
+            height: auto;
+        }
+        button {
+            padding: 15px 30px;
+            font-size: 1.2em;
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-top: 30px;
+        }
+        button:hover { background-color: #c82333; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Sessão Ativa: {{ exercise }}</h1>
+        <h2>Paciente: {{ patient }}</h2>
+    </div>
+    
+    <div class="video-container">
+        <img id="video-feed" src="{{ url_for('video_feed') }}">
+    </div>
+
+    <button onclick="stopSession()">Encerrar Sessão e Salvar Dados</button>
+
+    <script>
+        function stopSession() {
+            if (!confirm("Tem certeza que deseja encerrar e salvar a sessão?")) {
+                return;
+            }
+
+            fetch('/stop_session', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', }
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                // Redireciona de volta para o menu principal
+                window.location.href = data.redirect; 
+            })
+            .catch((error) => {
+                console.error('Erro ao parar a sessão:', error);
+                alert("Erro ao tentar salvar os dados. Verifique o servidor Flask.");
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FisioGestos VR - Menu de Exercícios</title>
+    <style>
+        body { font-family: Arial, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; background-color: #f4f7f9; }
+        .container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); max-width: 600px; width: 90%; text-align: center; }
+        h1 { color: #007bff; margin-bottom: 30px; }
+        #exercises-list button { width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 8px; background-color: #28a745; color: white; font-size: 1.1em; cursor: pointer; transition: background-color 0.3s; text-align: left;}
+        #exercises-list button:hover { background-color: #218838; }
+        #exercises-list span { display: block; font-size: 0.85em; opacity: 0.8; margin-top: 4px; }
+        #patient-input { width: calc(100% - 20px); padding: 10px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 5px; font-size: 1em; }
+        .info { margin-top: 20px; padding: 15px; background-color: #fff3cd; border: 1px solid #ffeeba; border-radius: 8px; color: #856404; }
+        #status-message { margin-top: 15px; font-weight: bold; color: #d9534f; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>FisioGestos VR - Reabilitação</h1>
+    
+    <input type="text" id="patient-input" placeholder="Digite o Nome do Paciente (Ex: Enio)">
+
+    <h2>Selecione o Exercício</h2>
+    <div id="exercises-list">
+        </div>
+    
+    <div id="status-message"></div>
+
+    <div class="info">
+        <strong>Instruções:</strong> O streaming de vídeo aparecerá na próxima tela após a seleção.
+    </div>
+</div>
+
+<script>
+    const exercises = [
+        { name: "Flexão do Punho", description: "Foco principal no Ângulo do Punho (0-5-17).", command: "Flexao_Punho" },
+        { name: "Abertura Total da Mão", description: "Foco principal na Amplitude de Movimento (ROM).", command: "Abertura_Mao_ROM" },
+        { name: "Controle e Precisão", description: "Foco principal na Suavidade (Jerk) e coordenação.", command: "Coordenacao" },
+    ];
+
+    const exercisesList = document.getElementById('exercises-list');
+    const patientInput = document.getElementById('patient-input');
+    const statusMessage = document.getElementById('status-message');
+
+    function startSession(exerciseCommand) {
+        const patientName = patientInput.value.trim();
+
+        if (!patientName) {
+            alert("Por favor, digite o nome do paciente antes de iniciar.");
+            return;
+        }
+        
+        statusMessage.textContent = 'Iniciando sessão...';
+
+        fetch('/start_session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', },
+            body: JSON.stringify({
+                patient_name: patientName,
+                exercise_name: exerciseCommand
+            }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                statusMessage.textContent = data.message;
+                // Redirecionamento para a página de streaming
+                window.location.href = data.redirect; 
+            } else {
+                statusMessage.textContent = `ERRO: ${data.message}`;
+            }
+        })
+        .catch((error) => {
+            console.error('Erro na comunicação com o servidor:', error);
+            statusMessage.textContent = "Erro de conexão. O servidor Flask (server.py) está rodando?";
+        });
+    }
+
+    exercises.forEach(ex => {
+        const button = document.createElement('button');
+        button.innerHTML = `<strong>${ex.name}</strong> <span>${ex.description}</span>`;
+        button.onclick = () => startSession(ex.command);
+        exercisesList.appendChild(button);
+    });
+</script>
+
+</body>
+</html>
