@@ -1,13 +1,10 @@
 import math
 import numpy as np
 
-# Índices dos landmarks do MediaPipe:
-# 0: Pulso (Wrist), 4: Ponta do Polegar, 5: Base do Indicador, 9: Centro da Palma, 17: Base do Mindinho, 20: Ponta do Mindinho
-
 def calculate_rom(lm_px):
     """
-    Calcula a Amplitude de Movimento (ROM) baseada na abertura/fechamento da mão.
-    Usa a distância entre o Polegar (4) e o Mindinho (20), normalizada pela dimensão da palma.
+    Calcula a Amplitude de Movimento (ROM) baseada na distância entre Polegar (4) e Mindinho (20),
+    normalizada pelo tamanho da palma (0-9).
     """
     if not lm_px or len(lm_px) < 21:
         return 0.0
@@ -20,7 +17,6 @@ def calculate_rom(lm_px):
 def calculate_angle(lm_px, p1_idx, p2_idx, p3_idx):
     """
     Calcula o ângulo em graus entre três landmarks (p2 é o vértice).
-    Usado para o ângulo do punho (5-0-17).
     """
     if not lm_px or len(lm_px) < 21:
         return 0.0
@@ -35,7 +31,7 @@ def calculate_angle(lm_px, p1_idx, p2_idx, p3_idx):
 
 def calculate_smoothness(trajectory_points):
     """
-    Calcula a suavidade do movimento usando o Jerk (3ª Derivada).
+    Calcula a suavidade do movimento usando o Jerk (3ª derivada da posição).
     """
     if len(trajectory_points) < 5:
         return 0.0
@@ -43,7 +39,3 @@ def calculate_smoothness(trajectory_points):
     jerk = np.diff(np.diff(np.diff(points, axis=0), axis=0), axis=0)
     jerk_magnitude = np.linalg.norm(jerk, axis=1)
     return float(np.mean(jerk_magnitude)) / 10.0
-
-def lm_list_px(hand_landmarks, w, h):
-    """Converte coordenadas normalizadas para pixels."""
-    return [(int(pt.x * w), int(pt.y * h)) for pt in hand_landmarks.landmark]

@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "titulo": "Pinça e Solta",
+    "descricao": "Tocar a ponta do polegar com cada um dos outros quatro dedos sequencialmente, voltando à abertura total.",
+    "link": "/start_exercise/1"
+  },
+  {
+    "id": 2,
+    "titulo": "Flexão/Extensão do Punho",
+    "descricao": "Mover a mão para cima e para baixo mantendo o antebraço imóvel.",
+    "link": "/start_exercise/2"
+  },
+  {
+    "id": 3,
+    "titulo": "Desvio Ulnar/Radial",
+    "descricao": "Mover a mão lateralmente como um limpador de para-brisa.",
+    "link": "/start_exercise/3"
+  },
+  {
+    "id": 4,
+    "titulo": "Abertura Total da Palma",
+    "descricao": "Fechar a mão em punho e abrir totalmente.",
+    "link": "/start_exercise/4"
+  }
+]
