@@ -25,3 +25,6 @@ pip-log.log
 # Se você gerar arquivos de vídeo ou logs de saída, adicione-os aqui.
 output/
 temp/
+fisioterapia_data.db
+static/data/sessions/
+*.csv

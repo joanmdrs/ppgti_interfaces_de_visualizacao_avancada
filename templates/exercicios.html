@@ -14,7 +14,7 @@
             <div class="card-body d-flex flex-column">
                 <h5 class="card-title">{{ ex.titulo }}</h5>
                 <p class="card-text text-truncate">{{ ex.descricao }}</p>
-                <a href="{{ ex.link }}" class="btn btn-success mt-auto">Executar</a>
+                <a href="{{ url_for('main.start_exercise', exercise_id=ex.id) }}" class="btn btn-success mt-auto">Executar</a>
 
                 <!-- Collapse -->
                 <button class="btn btn-outline-primary mt-2" type="button" 

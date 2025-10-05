@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard de Métricas{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="mb-4">Dashboard de Métricas de Sessões</h1>
+
+    {% if sessions %}
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Paciente</th>
+                    <th>Exercício</th>
+                    <th>Início</th>
+                    <th>Duração (s)</th>
+                    <th>Suavidade (Jerk)</th>
+                    <th>Máx ROM</th>
+                    <th>Máx Ângulo (deg)</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for session in sessions %}
+                <tr>
+                    <td>{{ session.id }}</td>
+                    <td>{{ session.patient_id }}</td>
+                    <td>{{ session.exercise_name|replace('_', ' ') }}</td>
+                    <td>{{ session.start_time.strftime('%d/%m/%Y %H:%M:%S') }}</td>
+                    <td>{{ session.duration_seconds|round(1) }}</td>
+                    <td>{{ session.smoothness_score|round(4) }}</td>
+                    
+                    <td>{{ session.max_rom|round(2) }}</td>
+                    <td>{{ session.max_angle|round(2) }}</td>
+                    
+                    <td>
+                        <a href="{{ url_for('main.export_csv', session_id=session.id) }}" class="btn btn-sm btn-success">
+                            <i class="bi bi-download"></i> CSV
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info" role="alert">
+        Nenhuma sessão de fisioterapia foi registrada ainda.
+    </div>
+    {% endif %}
+    
+    <div class="mt-4">
+        <a href="{{ url_for('main.exercicios') }}" class="btn btn-primary">Voltar para Exercícios</a>
+    </div>
+</div>
+{% endblock %}

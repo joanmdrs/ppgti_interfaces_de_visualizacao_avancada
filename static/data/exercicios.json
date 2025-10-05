@@ -1,26 +1,20 @@
 [
-  {
-    "id": 1,
-    "titulo": "Pinça e Solta",
-    "descricao": "Tocar a ponta do polegar com cada um dos outros quatro dedos sequencialmente, voltando à abertura total.",
-    "link": "/start_exercise/1"
-  },
-  {
-    "id": 2,
-    "titulo": "Flexão/Extensão do Punho",
-    "descricao": "Mover a mão para cima e para baixo mantendo o antebraço imóvel.",
-    "link": "/start_exercise/2"
-  },
-  {
-    "id": 3,
-    "titulo": "Desvio Ulnar/Radial",
-    "descricao": "Mover a mão lateralmente como um limpador de para-brisa.",
-    "link": "/start_exercise/3"
-  },
-  {
-    "id": 4,
-    "titulo": "Abertura Total da Palma",
-    "descricao": "Fechar a mão em punho e abrir totalmente.",
-    "link": "/start_exercise/4"
-  }
+    {
+        "id": 1,
+        "titulo": "Flexão/Extensão do Punho",
+        "descricao": "Movimento de cima para baixo. Foco na amplitude de movimento (ROM) vertical.",
+        "metrica": "ROM (Distância)",
+        "rom_min": 100,
+        "rom_max": 350,
+        "detalhes": "Use a ponta do dedo médio e o pulso como referência."
+    },
+    {
+        "id": 2,
+        "titulo": "Desvio Ulnar/Radial",
+        "descricao": "Movimento de um lado para o outro. Foco na amplitude angular horizontal do punho.",
+        "metrica": "Ângulo (Graus)",
+        "rom_min": 20,
+        "rom_max": 65,
+        "detalhes": "Mantenha o braço estável. O medidor de progresso usará o Ângulo do Punho."
+    }
 ]

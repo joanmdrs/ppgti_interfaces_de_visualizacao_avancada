@@ -2,45 +2,203 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Sessão de Fisioterapia - {{ patient }}</title>
+    <title>Sessão Gamificada - {{ patient }}</title>
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
     <style>
+        /* Estilos básicos */
         body { text-align: center; font-family: Arial, sans-serif; background-color: #f4f7f9; padding: 20px; }
-        .header { margin-bottom: 20px; color: #007bff; }
-        .video-container { border: 4px solid #007bff; display: inline-block; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); background: #000; }
-        #video-feed { 
-            display: block; 
-            width: 800px; /* Ajuste o tamanho da visualização no navegador */
-            height: auto;
+        h1, h2 { color: #007bff; }
+        
+        /* Contêiner Principal da Realidade Aumentada */
+        .ar-container { 
+            position: relative; 
+            width: 800px; /* Largura do jogo/overlay */
+            height: 600px; /* Altura do jogo/overlay */
+            margin: 20px auto; 
+            border: 4px solid #32CD32; 
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); 
+            background: #000;
         }
-        button {
-            padding: 15px 30px;
-            font-size: 1.2em;
-            background-color: #dc3545;
+        
+        /* Vídeo local (câmera do cliente) - Z-index baixo */
+        #client-video { 
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%; 
+            height: 100%;
+            transform: scaleX(-1); /* Essencial para o modo espelho */
+            z-index: 1;
+        }
+
+        /* Canvas para desenhar o medidor, cursor, alvos - Z-index alto */
+        #ar-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 10;
+        }
+
+        /* Medidor de Progresso (Feedback de ROM/Ângulo) */
+        #progress-meter {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            width: 30px;
+            height: 90%;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid white;
+            z-index: 20;
+        }
+        #progress-fill {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            background: #007bff;
+            transition: height 0.1s linear; /* Animação suave */
+        }
+
+        /* Exibição de Métricas */
+        #metrics-board {
+            position: absolute;
+            left: 10px;
+            top: 10px;
+            background: rgba(0, 0, 0, 0.7);
             color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-            margin-top: 30px;
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-size: 1.2em;
+            z-index: 20;
         }
-        button:hover { background-color: #c82333; }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>Sessão Ativa: {{ exercise }}</h1>
+        <h1>Sessão AR: {{ exercise }}</h1>
         <h2>Paciente: {{ patient }}</h2>
+        <p>Acompanhe a barra de progresso e mova sua mão para guiá-la!</p>
     </div>
     
-    <div class="video-container">
-        <img id="video-feed" src="{{ url_for('video_feed') }}">
+    <div class="ar-container">
+        <video id="client-video" autoplay playsinline></video> 
+        
+        <canvas id="ar-overlay" width="800" height="600"></canvas>
+
+        <div id="progress-meter">
+            <div id="progress-fill"></div>
+        </div>
+
+        <div id="metrics-board">ROM: 0.00<br>Ângulo: 0.00°</div>
     </div>
 
     <button onclick="stopSession()">Encerrar Sessão e Salvar Dados</button>
 
     <script>
+        const socket = io();
+        const CONTAINER_WIDTH = 800;
+        const CONTAINER_HEIGHT = 600;
+        const clientVideo = document.getElementById('client-video');
+        const progressFill = document.getElementById('progress-fill');
+        const metricsBoard = document.getElementById('metrics-board');
+        const canvas = document.getElementById('ar-overlay');
+        const ctx = canvas.getContext('2d');
+        let videoStream = null;
+
+        // --- Variáveis de Meta e Limites ---
+        // Adapte estes valores conforme o exercício.
+        const MIN_ROM = 100; // Ponto de partida
+        const MAX_ROM = 400; // ROM ideal a ser alcançada
+        const ROM_RANGE = MAX_ROM - MIN_ROM;
+
+        // ---------------- FUNÇÃO DE CÂMERA CLIENTE ----------------
+        async function startClientCamera() {
+            try {
+                videoStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                clientVideo.srcObject = videoStream;
+                clientVideo.onloadedmetadata = () => {
+                    clientVideo.play();
+                };
+            } catch (err) {
+                console.error("Erro ao acessar a câmera (verifique permissões): ", err);
+                alert("Erro ao acessar a câmera. Verifique se as permissões foram concedidas.");
+            }
+        }
+        
+        // ---------------- DESENHO DE FEEDBACK NO CANVAS ----------------
+        function drawOverlay(x, y, rom, angle) {
+            // Limpa o canvas a cada frame
+            ctx.clearRect(0, 0, CONTAINER_WIDTH, CONTAINER_HEIGHT);
+
+            // 1. Desenha o cursor (a mão do paciente)
+            ctx.beginPath();
+            ctx.arc(x, y, 15, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(0, 255, 0, 0.7)';
+            ctx.fill();
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            
+            // Exemplo: Desenhar um alvo
+            ctx.beginPath();
+            ctx.rect(CONTAINER_WIDTH / 2 - 50, 50, 100, 100);
+            ctx.strokeStyle = 'yellow';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
+        // ---------------- RECEBIMENTO DE DADOS DO PYTHON ----------------
+        socket.on('hand_data', (data) => {
+            const handX = data.x;
+            const handY = data.y;
+            const rom = parseFloat(data.rom);
+            const angle = parseFloat(data.angle);
+            
+            const cam_w = data.cam_w;
+            const cam_h = data.cam_h;
+
+            if (handX !== -1 && cam_w > 0) {
+                // 1. Mapeamento e Inversão de X (Para alinhar com a visão espelhada)
+                const invertedHandX = cam_w - handX;
+                const cursorX = (invertedHandX / cam_w) * CONTAINER_WIDTH;
+                const cursorY = (handY / cam_h) * CONTAINER_HEIGHT;
+                
+                // 2. Atualiza o medidor de progresso (ROM)
+                let progressPercent = 0;
+                if (rom > MIN_ROM) {
+                    progressPercent = Math.min(100, ((rom - MIN_ROM) / ROM_RANGE) * 100);
+                }
+                progressFill.style.height = `${progressPercent}%`;
+
+                // 3. Atualiza o placar de métricas
+                metricsBoard.innerHTML = `ROM: ${rom.toFixed(2)}<br>Ângulo: ${angle.toFixed(2)}°`;
+                
+                // 4. Desenha o overlay (cursor e alvos)
+                drawOverlay(cursorX, cursorY, rom, angle);
+                
+                // Exemplo de feedback: Se atingir 90% da meta, a borda fica verde.
+                if (progressPercent >= 90) {
+                    document.querySelector('.ar-container').style.borderColor = 'green';
+                } else {
+                    document.querySelector('.ar-container').style.borderColor = '#32CD32';
+                }
+
+            } else {
+                // Mão não detectada
+                metricsBoard.innerHTML = `ROM: --<br>Ângulo: --`;
+                ctx.clearRect(0, 0, CONTAINER_WIDTH, CONTAINER_HEIGHT);
+                progressFill.style.height = '0%';
+            }
+        });
+
+        // ---------------- CONTROLE DA SESSÃO ----------------
         function stopSession() {
-            if (!confirm("Tem certeza que deseja encerrar e salvar a sessão?")) {
+            socket.disconnect(); 
+            
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+            }
+
+            if (!confirm("Sessão encerrada. Deseja salvar os dados?")) {
                 return;
             }
 
@@ -51,7 +209,6 @@
             .then(response => response.json())
             .then(data => {
                 alert(data.message);
-                // Redireciona de volta para o menu principal
                 window.location.href = data.redirect; 
             })
             .catch((error) => {
@@ -59,6 +216,9 @@
                 alert("Erro ao tentar salvar os dados. Verifique o servidor Flask.");
             });
         }
+        
+        // Inicializa a câmera e o SocketIO
+        window.onload = startClientCamera;
     </script>
 </body>
 </html>

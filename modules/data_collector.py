@@ -1,55 +1,83 @@
 # modules/data_collector.py
-import csv
+
 from datetime import datetime
+import json
 import os
+import csv
+import numpy as np
 
 class DataCollector:
     def __init__(self, patient_id, exercise_name):
         self.patient_id = patient_id
         self.exercise_name = exercise_name
         self.start_time = datetime.now()
-        self.data = []  # Lista que armazenará os frames
-        self.hand_center_trajectory = []  # Trajetória dos centros das mãos
+        
+        # Estruturas para coletar os dados brutos de cada frame
+        self.frame_data = [] # Para salvar os dados de todos os landmarks e métricas
+        
+        # NOVAS: Listas específicas para calcular o Max ROM e Max Ângulo
+        self.rom_trajectory = [] 
+        self.angle_trajectory = []
+        
+        # Para calcular a suavidade (usando o ponto central da mão)
+        self.hand_center_trajectory = [] 
 
-        # Cria pasta para salvar os CSVs, se não existir
-        self.output_dir = "session_data"
-        os.makedirs(self.output_dir, exist_ok=True)
-
-    def log_frame_data(self, rom, wrist_angle, landmarks_px, width, height):
-        """Registra dados de cada frame, incluindo timestamp."""
-        frame_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
-        self.data.append({
-            "timestamp": frame_time,
+    def log_frame_data(self, rom, angle, lm_px, cam_w, cam_h):
+        """Registra os dados de um único frame."""
+        timestamp = (datetime.now() - self.start_time).total_seconds()
+        
+        # 1. Armazena dados para o cálculo de Max e Suavidade
+        self.rom_trajectory.append(rom)
+        self.angle_trajectory.append(angle)
+        
+        # O ponto 9 (mão central) é usado para o cálculo da suavidade
+        if len(lm_px) > 9:
+            self.hand_center_trajectory.append(lm_px[9])
+        
+        # 2. Prepara os dados brutos para exportação
+        data_entry = {
+            "timestamp": timestamp,
             "rom": rom,
-            "wrist_angle": wrist_angle,
-            "landmarks": landmarks_px,
-            "width": width,
-            "height": height
-        })
+            "angle": angle,
+            "cam_w": cam_w,
+            "cam_h": cam_h
+        }
+        
+        # Adiciona as 21 coordenadas (x, y) dos landmarks
+        for i, (x, y) in enumerate(lm_px):
+            data_entry[f"lm{i}_x"] = x
+            data_entry[f"lm{i}_y"] = y
+            
+        self.frame_data.append(data_entry)
 
-        # Calcula centro da mão e salva na trajetória
-        cx = sum([p[0] for p in landmarks_px]) / len(landmarks_px)
-        cy = sum([p[1] for p in landmarks_px]) / len(landmarks_px)
-        self.hand_center_trajectory.append({'cx': cx, 'cy': cy, 'rom': rom, 'angle': wrist_angle, 'timestamp': frame_time})
+    def export_session_data(self, smoothness_score):
+        """Exporta os dados brutos para um arquivo CSV e retorna o caminho."""
+        
+        # Cria a pasta se não existir
+        output_dir = os.path.join('static', 'data', 'sessions', self.patient_id)
+        os.makedirs(output_dir, exist_ok=True)
+        
+        # Cria o nome do arquivo
+        date_str = self.start_time.strftime("%Y%m%d_%H%M%S")
+        filename = f"{self.patient_id}_{self.exercise_name}_{date_str}_raw.csv"
+        file_path = os.path.join(output_dir, filename)
 
-    def export_session_data(self, smoothness_score=None):
-        """Exporta todos os dados coletados para CSV."""
-        filename = f"{self.patient_id}_{self.exercise_name}_{self.start_time.strftime('%Y%m%d_%H%M%S')}.csv"
-        filepath = os.path.join(self.output_dir, filename)
+        if not self.frame_data:
+            print("[ALERTA] Nenhum dado de frame para salvar.")
+            return None
 
-        fieldnames = ["timestamp", "rom", "wrist_angle", "width", "height", "landmarks"]
-        if smoothness_score is not None:
-            fieldnames.append("smoothness_score")
+        # Define os cabeçalhos do CSV
+        fieldnames = list(self.frame_data[0].keys())
 
-        with open(filepath, mode='w', newline='', encoding='utf-8') as f:
-            writer = csv.DictWriter(f, fieldnames=fieldnames)
-            writer.writeheader()
-            for row in self.data:
-                row_copy = row.copy()
-                if smoothness_score is not None:
-                    row_copy["smoothness_score"] = smoothness_score
-                row_copy["landmarks"] = str(row_copy["landmarks"])
-                writer.writerow(row_copy)
-
-        print(f"[INFO] Dados da sessão salvos em: {filepath}")
-        return filepath
+        try:
+            with open(file_path, 'w', newline='', encoding='utf-8') as csvfile:
+                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerows(self.frame_data)
+            
+            print(f"[SUCESSO] Dados brutos salvos em: {file_path}")
+            return file_path
+            
+        except Exception as e:
+            print(f"[ERRO] Falha ao salvar arquivo CSV: {e}")
+            return None

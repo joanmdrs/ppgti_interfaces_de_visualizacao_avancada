@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block title %}Controle de Sessão - {{ exercise }}{% endblock %}
+
+{% block content %}
+<div class="container text-center mt-5">
+    <h1 class="text-success">Sessão Ativa: {{ exercise }}</h1>
+    <h2 class="mb-4">Paciente: {{ patient }}</h2>
+    
+    <p class="lead">A câmera foi iniciada em uma **janela nativa separada**.</p>
+    <p>Use a janela de vídeo para realizar o exercício.</p>
+    
+    <div class="alert alert-info mt-4" role="alert">
+        <strong>Instruções:</strong> Mantenha esta página aberta no navegador para controlar a sessão.
+    </div>
+
+    <button id="stop-button" class="btn btn-danger btn-lg mt-5" onclick="stopSession()">
+        <i class="bi bi-stop-circle-fill"></i> ENCERRAR SESSÃO E SALVAR DADOS
+    </button>
+</div>
+
+<script>
+    function stopSession() {
+        if (!confirm("Tem certeza que deseja encerrar a sessão? A janela de vídeo será fechada.")) {
+            return;
+        }
+
+        // Desabilita o botão para evitar cliques duplicados
+        document.getElementById('stop-button').disabled = true;
+        document.getElementById('stop-button').innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Salvando...';
+
+        fetch('/stop_session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', }
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+            window.location.href = data.redirect; 
+        })
+        .catch((error) => {
+            console.error('Erro ao parar a sessão:', error);
+            alert("Erro ao tentar salvar os dados. Verifique o terminal do servidor.");
+            document.getElementById('stop-button').disabled = false;
+        });
+    }
+</script>
+{% endblock %}
