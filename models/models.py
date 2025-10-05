@@ -1,6 +1,7 @@
+# models/models.py
+
 from flask_sqlalchemy import SQLAlchemy
 
-# Inicializa o objeto SQLAlchemy sem associar diretamente ao app (será feito em app.py)
 db = SQLAlchemy()
 
 # --- MODELO DE DADOS (Tabela Session) ---
@@ -14,9 +15,10 @@ class Session(db.Model):
     smoothness_score = db.Column(db.Float)
     data_file_path = db.Column(db.String(255)) 
     
-    # COLUNAS PARA MÁXIMOS
+    # Colunas para Máximos (ROM/Ângulo) e para Jogo (Score)
     max_rom = db.Column(db.Float)
     max_angle = db.Column(db.Float)
+    game_score = db.Column(db.Integer, default=0) # Nova coluna para pontuação do jogo
 
     def __repr__(self):
         return f'<Session {self.id} - {self.patient_id}>'

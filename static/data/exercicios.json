@@ -1,20 +1,43 @@
 [
     {
         "id": 1,
-        "titulo": "Flexão/Extensão do Punho",
-        "descricao": "Movimento de cima para baixo. Foco na amplitude de movimento (ROM) vertical.",
+        "titulo": "Flexão de Punho Básico (Manutenção)",
+        "descricao": "Exercício focado em aumentar a flexão do punho. Tente atingir o ROM máximo e mantê-lo por 2.5 segundos.",
+        "rom_min": 50,
+        "rom_max": 250,
         "metrica": "ROM (Distância)",
-        "rom_min": 100,
-        "rom_max": 350,
-        "detalhes": "Use a ponta do dedo médio e o pulso como referência."
+        "type": "standard",
+        "hold_time_seconds": 2.5,
+        "logic_key": "flexao_punho"
     },
     {
         "id": 2,
-        "titulo": "Desvio Ulnar/Radial",
-        "descricao": "Movimento de um lado para o outro. Foco na amplitude angular horizontal do punho.",
+        "titulo": "Extensão do Cotovelo",
+        "descricao": "Exercício de reabilitação para estender o cotovelo. Métrica baseada em Ângulo.",
+        "rom_min": 10,
+        "rom_max": 170,
         "metrica": "Ângulo (Graus)",
-        "rom_min": 20,
-        "rom_max": 65,
-        "detalhes": "Mantenha o braço estável. O medidor de progresso usará o Ângulo do Punho."
+        "type": "standard",
+        "logic_key": "extensao_cotovelo"
+    },
+    {
+        "id": 3,
+        "titulo": "Jogo: Acerte o Alvo Rápido (Posição)",
+        "descricao": "Mova a mão rapidamente para acertar o alvo na tela e marcar pontos!",
+        "rom_min": 0,
+        "rom_max": 0,
+        "metrica": "Pontuação",
+        "type": "game",
+        "logic_key": "target_hit_game"
+    },
+    {
+        "id": 4,
+        "titulo": "Jogo: Agarrar o Alvo 3D",
+        "descricao": "Posicione a mão sobre o alvo e feche-a (aperta) para pontuar.",
+        "rom_min": 0,
+        "rom_max": 0,
+        "metrica": "Pontuação e Preensão",
+        "type": "game",
+        "logic_key": "grip_score_game"
     }
 ]

@@ -1,3 +1,5 @@
+# config/config.py
+
 # Configurações do SQLAlchemy
 SQLALCHEMY_DATABASE_URI = 'sqlite:///fisioterapia_data.db'
 
