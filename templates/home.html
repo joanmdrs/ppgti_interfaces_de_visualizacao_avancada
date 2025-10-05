@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<div style="
+    display: flex;
+    flex-direction: column;
+">
+    <h2 style="font-size: 30px; color: #2c3e50;">
+        Bem-vindo ao FisioAR!
+    </h2>
+    <p style="font-size: 18px; color: #555; margin-bottom: 2rem;">
+        Explore nossos exercícios interativos em realidade aumentada e leve sua fisioterapia a um novo nível.
+    </p>
+    <img 
+        src="{{ url_for('static', filename='images/home-background.png') }}" 
+        alt="Home Background" 
+        style="width: 70%; height: auto; opacity: 0.6;"
+    >
+</div>
+{% endblock %}

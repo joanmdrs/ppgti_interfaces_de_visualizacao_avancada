@@ -1,46 +1,45 @@
 {% extends 'base.html' %}
 
-{% block title %}Sessão de Jogo - {{ exercise }}{% endblock %}
+{% block title %}{{ exercise }}{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="card shadow-lg">
-        <div class="card-header bg-success text-white">
-            <h2 class="mb-0">{{ exercise }}</h2>
-        </div>
-        <div class="card-body">
-            <p class="lead">Paciente: <strong>{{ patient }}</strong></p>
-            <p>O ambiente de jogo foi iniciado em uma **janela nativa do seu sistema (OpenCV)**. Maximize-a para começar a interagir com os alvos.</p>
 
-            <div class="alert alert-info">
-                <strong>Instruções:</strong> Mova sua mão rapidamente para tocar o centro do alvo verde antes que ele desapareça. Sua pontuação é exibida na janela nativa.
-            </div>
+<h3 class="text-success">{{ exercise }}</h3>
 
-            <div class="mt-4">
-                <p>Quando terminar o jogo, clique no botão abaixo para salvar sua pontuação no banco de dados.</p>
-                <form id="stop-session-form">
-                    <button type="submit" class="btn btn-danger btn-lg">
-                        Parar Jogo e Salvar Pontuação
-                    </button>
-                </form>
-            </div>
-        </div>
+<div class=" mt-4">
+    
+    <p class="mb-1">
+        <strong>Paciente:</strong> {{ patient }}
+    </p>
+    <p class="text-muted">
+        O jogo foi iniciado em uma janela nativa do sistema (OpenCV). Maximize-a para começar a interagir.
+    </p>
+
+   <div class="alert mt-4" style="background-color: #fff8e1; border-left: 6px solid #f1c40f; color: #444;">
+        <strong>Instruções:</strong><br>
+        Mova sua mão para tocar o centro do alvo verde antes que ele desapareça.  
+        A pontuação é exibida na janela do jogo.
     </div>
+
+
+    <form id="stop-session-form" class="mt-4">
+        <button type="submit" class="btn btn-danger px-4">
+            <i class="bi bi-stop-circle-fill me-2"></i>
+            Parar Jogo e Salvar Pontuação
+        </button>
+    </form>
+
 </div>
 
 <script>
     document.getElementById('stop-session-form').addEventListener('submit', function(event) {
         event.preventDefault();
-        
-        // Chamada AJAX para a rota de parada
-        fetch("{{ url_for('main.stop_session') }}", {
-            method: 'POST'
-        })
+
+        fetch("{{ url_for('main.stop_session') }}", { method: 'POST' })
         .then(response => response.json())
         .then(data => {
             alert(data.message);
             if (data.redirect) {
-                // Redireciona para o dashboard de métricas
                 window.location.href = data.redirect;
             }
         })

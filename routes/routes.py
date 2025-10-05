@@ -38,7 +38,7 @@ def load_exercise_by_id(exercise_id):
 
 @main_bp.route('/')
 def index():
-    return render_template('base.html')
+    return render_template('home.html')
 
 @main_bp.route('/exercicios')
 def exercicios():

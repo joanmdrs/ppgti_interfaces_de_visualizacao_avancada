@@ -4,17 +4,24 @@
         FisioAR
     </div>
 
-    <a href="{{ url_for('main.index') }}" id="menu-home">
-        <i class="fa-solid fa-house"></i> 
-        Home
+    <div class="menu-itens"> 
+        <a href="{{ url_for('main.index') }}" id="menu-home">
+            <i class="fa-solid fa-house"></i> 
+            Home
 
-    <a href="{{ url_for('main.exercicios') }}" id="menu-exercicios">
-        <i class="fa-solid fa-dumbbell"></i> 
-        Exercícios
-    </a>
+        </a>
 
-    <a href="{{ url_for('main.metricas') }}" id="menu-metricas">
-        <i class="fa-solid fa-chart-simple"></i> 
-        Métricas
-    </a>
+
+        <a href="{{ url_for('main.exercicios') }}" id="menu-exercicios">
+            <i class="fa-solid fa-dumbbell"></i> 
+            Exercícios
+        </a>
+
+        <a href="{{ url_for('main.metricas') }}" id="menu-metricas">
+            <i class="fa-solid fa-chart-simple"></i> 
+            Métricas
+        </a>
+    </div>
+
+    
 </div>
