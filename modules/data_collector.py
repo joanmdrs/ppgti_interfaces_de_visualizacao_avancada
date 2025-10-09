@@ -5,6 +5,8 @@ import json
 import os
 import csv
 import numpy as np
+# Importa a função de cálculo de suavidade
+from modules.metrics import calculate_smoothness 
 
 class DataCollector:
     def __init__(self, patient_id, exercise_name):
@@ -13,14 +15,18 @@ class DataCollector:
         self.start_time = datetime.now()
         
         # Estruturas para coletar os dados brutos de cada frame
-        self.frame_data = [] # Para salvar os dados de todos os landmarks e métricas
+        self.frame_data = [] 
         
-        # NOVAS: Listas específicas para calcular o Max ROM e Max Ângulo
+        # Listas específicas para calcular o Max ROM e Max Ângulo
         self.rom_trajectory = [] 
         self.angle_trajectory = []
         
         # Para calcular a suavidade (usando o ponto central da mão)
         self.hand_center_trajectory = [] 
+        
+        # NOVOS: Armazenamento da pontuação final do jogo
+        self.game_score = 0
+        self.game_logic_key = None
 
     def log_frame_data(self, rom, angle, lm_px, cam_w, cam_h):
         """Registra os dados de um único frame."""
@@ -50,7 +56,40 @@ class DataCollector:
             
         self.frame_data.append(data_entry)
 
-    def export_session_data(self, smoothness_score):
+    def log_game_score(self, logic_key, final_score):
+        """Armazena a pontuação final do jogo."""
+        self.game_score = final_score
+        self.game_logic_key = logic_key
+        
+    def get_game_score(self):
+        """Retorna a pontuação do jogo, se houver."""
+        return self.game_score
+
+    def calculate_and_get_metrics(self):
+        """
+        Calcula e retorna as métricas resumidas da sessão para persistência.
+        """
+        duration = (datetime.now() - self.start_time).total_seconds()
+        
+        # 1. Métrica: Máximo de ROM e Ângulo
+        max_rom = max(self.rom_trajectory) if self.rom_trajectory else 0.0
+        max_angle = max(self.angle_trajectory) if self.angle_trajectory else 0.0
+
+        # 2. Métrica: Suavidade
+        smoothness_score = calculate_smoothness(self.hand_center_trajectory)
+        
+        # 3. Métrica: Pontuação do Jogo (0 se não for um jogo)
+        final_game_score = self.get_game_score()
+        
+        return {
+            "duration_seconds": duration,
+            "max_rom": max_rom,
+            "max_angle": max_angle,
+            "smoothness_score": smoothness_score,
+            "game_score": final_game_score,
+        }
+
+    def export_session_data(self): # Removido o argumento 'smoothness_score'
         """Exporta os dados brutos para um arquivo CSV e retorna o caminho."""
         
         # Cria a pasta se não existir

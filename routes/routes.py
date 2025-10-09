@@ -9,8 +9,9 @@ import os
 # Imports que refletem a nova estrutura modular
 from models.models import db, Session
 from config.config import PATIENT_NAME
+# O DataCollector e a Session agora gerenciam as métricas
 from modules.data_collector import DataCollector
-from modules.metrics import calculate_smoothness
+from modules.metrics import calculate_smoothness # Mantido, mas menos usado no routes
 
 # Importa as variáveis e funções do módulo da câmera
 import modules.camera_module as cam
@@ -104,7 +105,7 @@ def start_game(exercise_id):
                             patient=PATIENT_NAME.replace('_', ' '),
                             exercise=ex['titulo'])
 
-# --- Rota de Parada de Sessão ---
+# ----------------- Rota de Parada de Sessão (CORRIGIDA) -----------------
 
 @main_bp.route('/stop_session', methods=['POST'])
 def stop_session():
@@ -118,25 +119,21 @@ def stop_session():
     # 2. Processamento e Salvamento
     if cam.global_data_collector:
         try:
-            # Obtém métricas
-            rom_list = cam.global_data_collector.rom_trajectory
-            angle_list = cam.global_data_collector.angle_trajectory
-            smoothness_score = calculate_smoothness(cam.global_data_collector.hand_center_trajectory)
+            # NOVO: Calcula todas as métricas finais em um único dicionário
+            metrics = cam.global_data_collector.calculate_and_get_metrics()
+            
+            # ATUALIZADO: Exporta o sumário (CSV) sem passar argumentos
+            data_path = cam.global_data_collector.export_session_data() 
+            
+            # Mapeia as métricas para variáveis de salvamento
             end_time = datetime.now() 
+            duration = metrics['duration_seconds']
+            max_rom_achieved = metrics['max_rom']
+            max_angle_achieved = metrics['max_angle']
+            smoothness_score = metrics['smoothness_score']
+            final_game_score = metrics['game_score']
 
-            # Cálculo dos Máximos
-            max_rom_achieved = np.amax(rom_list) if rom_list else 0.0
-            max_angle_achieved = np.amax(angle_list) if angle_list else 0.0
-            
-            # Obtém a pontuação do jogo, se aplicável
-            final_game_score = cam.GAME_SCORE if cam.CURRENT_LOGIC_KEY == 'target_hit_game' else 0
-
-            # Exporta o sumário (CSV)
-            data_path = cam.global_data_collector.export_session_data(smoothness_score)
-            
             # Salva o registro no banco de dados
-            duration = (end_time - cam.global_data_collector.start_time).total_seconds()
-            
             new_session = Session(
                 patient_id=PATIENT_NAME,
                 exercise_name=cam.EXERCISE_NAME,
@@ -152,7 +149,7 @@ def stop_session():
             db.session.add(new_session)
             db.session.commit()
 
-            if cam.CURRENT_LOGIC_KEY == 'target_hit_game':
+            if cam.CURRENT_LOGIC_KEY in ['target_hit_game', 'grip_score_game']:
                  message = f"Sessão de Jogo encerrada! Pontuação Final: {final_game_score}"
             else:
                  message = f"Sessão encerrada. Max ROM: {max_rom_achieved:.2f}, Max Ângulo: {max_angle_achieved:.2f}"
@@ -165,7 +162,7 @@ def stop_session():
     cam.global_data_collector = None
     cam.EXERCISE_NAME = "N/A"
     cam.CURRENT_LOGIC_KEY = "default"
-    cam.GAME_SCORE = 0
+    cam.GAME_SCORE = 0 # Resetamos a variável global do score
 
     return jsonify({"status": "success", "message": message, "redirect": "/metricas"}) 
 

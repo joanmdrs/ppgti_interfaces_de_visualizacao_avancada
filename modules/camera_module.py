@@ -197,7 +197,7 @@ def render_grip_score_game_feedback(frame, w, h, lm_px, hand_center_px, current_
     cv2.circle(frame, (TARGET_X, TARGET_Y), target_radius, (200, 200, 200), 2)
     # 3. Brilho (para dar a sensação de 3D/esfera)
     cv2.circle(frame, (TARGET_X - int(target_radius * 0.3), TARGET_Y - int(target_radius * 0.3)), 
-               int(target_radius * 0.3), (255, 255, 255), -1)
+                int(target_radius * 0.3), (255, 255, 255), -1)
 
     
     # Desenho do Cursor (Ponto 9)
@@ -284,7 +284,7 @@ def _render_standard_logic(frame, w, h, metric_value, current_rom, wrist_angle, 
                 hold_progress = min(1.0, time_elapsed / HOLD_TIME_REQUIRED)
                 fill_w_hold = int(bar_w_hold * hold_progress)
                 cv2.rectangle(frame, (bar_x_hold, bar_y_hold), (bar_x_hold + fill_w_hold, bar_y_hold + bar_h_hold), (0, 200, 200), -1) 
-                              
+                                     
                 hold_text = f"EM MANUTENÇÃO: {time_remaining:.1f}s"
                 hold_color = (0, 255, 255)
         elif HOLD_COMPLETE:
@@ -323,7 +323,7 @@ LOGIC_DISPATCHER = {
 
 def tracking_thread_function():
     """Captura da câmera, rastreia, registra dados e despacha a renderização.
-       CHAMADA PADRONIZADA: agora sempre 8 argumentos.
+        CHAMADA PADRONIZADA: agora sempre 8 argumentos.
     """
     global video_camera, global_data_collector, CAMERA_RUNNING
     global EXERCISE_NAME, CURRENT_LOGIC_KEY, GAME_HIGH_SCORE
@@ -395,21 +395,13 @@ def tracking_thread_function():
             
     print("[INFO] Thread de rastreio nativa encerrada.")
     
-    # --- NOVO: LÓGICA DE EXPOSIÇÃO DE PONTUAÇÃO MÁXIMA PARA SALVAMENTO ---
+    # --- AJUSTE: LÓGICA DE EXPOSIÇÃO DE PONTUAÇÃO MÁXIMA PARA SALVAMENTO ---
+    # Agora usa o método log_game_score no DataCollector
     if global_data_collector and (CURRENT_LOGIC_KEY == "target_hit_game" or CURRENT_LOGIC_KEY == "grip_score_game"):
-        # Se um dos jogos estava ativo, registra a pontuação máxima final no coletor.
-        # ASSUME que o frontend/App está lendo este coletor no final da sessão para salvar no Firestore.
         if GAME_HIGH_SCORE > 0:
             print(f"[DATA] Final Score: Expondo High Score de {GAME_HIGH_SCORE} para {CURRENT_LOGIC_KEY} no coletor.")
-            # Chamamos um método fictício para sinalizar que este é o dado final do jogo.
-            # No ambiente real, o coletor de dados leria o `GAME_HIGH_SCORE` final.
-            # Assumimos que o coletor de dados tem uma forma de salvar essa informação.
-            try:
-                global_data_collector.log_game_score(CURRENT_LOGIC_KEY, GAME_HIGH_SCORE)
-            except AttributeError:
-                # Fallback se o método não existir
-                pass
-            
+            global_data_collector.log_game_score(CURRENT_LOGIC_KEY, GAME_HIGH_SCORE)
+        
     # --- FIM LÓGICA DE EXPOSIÇÃO ---
     
     if video_camera:

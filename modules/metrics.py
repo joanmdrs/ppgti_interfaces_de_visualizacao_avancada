@@ -55,34 +55,32 @@ def calculate_angle(lm_px, p1_idx, p2_idx, p3_idx):
 def calculate_grip_status(lm_px, threshold_ratio=0.15):
     """
     Determina o status da preensão (Fechada/Aberta).
-    Compara a distância vertical entre o pulso (0) e a ponta do indicador (8)
-    com a distância horizontal entre a ponta do indicador (8) e a ponta do polegar (4).
-    
-    Ou, mais simples: Usa a distância entre a ponta do indicador (8) e a base do indicador (5).
-    Se estiverem muito próximos, a mão está fechada.
+    Usa a distância entre a ponta do indicador (8) e a ponta do polegar (4)
+    comparada com a largura da palma (5 a 17).
     """
     if len(lm_px) < 9: return False # Não detectado
 
-    # Distância vertical do dedo (referência do tamanho do dedo)
-    # distance_ref = np.linalg.norm(np.array(lm_px[8]) - np.array(lm_px[5]))
-    
     # Distância entre a ponta do indicador (8) e a ponta do polegar (4)
-    # Esta é a melhor métrica para "agarrar"
     distance_grip = np.linalg.norm(np.array(lm_px[8]) - np.array(lm_px[4]))
     
-    # Uma vez que não temos um valor de referência fixo, usaremos um limiar de pixel simples
-    # ou podemos usar a largura da palma como referência (distância entre 5 e 17)
-    
+    # Largura da palma (5 a 17) para normalização
     palm_width = np.linalg.norm(np.array(lm_px[5]) - np.array(lm_px[17]))
     
-    # O aperto é considerado ativo se a distância do aperto for menor que 30% da largura da palma
+    # O aperto é considerado ativo se a distância do aperto for menor que 35% da largura da palma
     if distance_grip < palm_width * 0.35:
         return True # Mão Fechada/Aperto Ativo
     
     return False # Mão Aberta
     
 def calculate_smoothness(trajectory):
-    """Placeholder para o cálculo de suavidade."""
-    # (Lógica complexa de jerk/derivada)
+    """
+    Cálculo de suavidade (Placeholder).
+    Em um sistema real, calcularia o Jerk (derivada da aceleração)
+    para medir a fluidez do movimento.
+    """
     if len(trajectory) < 10: return 0.0
-    return np.random.uniform(1.0, 5.0)
+    
+    # Simula um score de suavidade com base no número de pontos, 
+    # garantindo que o valor seja razoável para a exibição.
+    base_smoothness = 1.0 + len(trajectory) / 1000.0
+    return np.random.uniform(base_smoothness * 0.9, base_smoothness * 1.1)
